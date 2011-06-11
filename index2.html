@@ -1,0 +1,197 @@
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Cash Cab Driver Cam</title>
+	<style type="text/css"></style>
+
+        <script type="text/javascript" src="http://staging.tokbox.com/v0.91/js/TB.min.js"></script>
+	
+	<script type="text/javascript">
+                var thePartnerKey = 1127;  // TBD: tokbox internal key
+                var theSessionId = "16a69a59e0bcb6aea58bc1735c62fa36782b676e";
+                var theSession = null;
+                var thePublisher = null;
+
+                var debug = false; // Set to true if you want event alerting
+
+                // Stand on our heads to get the sessionId out of the URL
+                // to enable many concurrent demos
+        
+                theSessionId =  paramsParse("sessionId") != "" ? paramsParse("sessionId") : theSessionId;
+                
+                function paramsParse(name){
+                          name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");            
+                          var regexS = "[\\?&]"+name+"=([^&#]*)";
+                          var regex = new RegExp( regexS );
+                          var results = regex.exec( window.location.href );
+                          if( results == null )
+                           return "";
+                          else
+                          return results[1];
+                }
+
+		// Dont try to handle anything; just pump exception
+		// messages to a Javascript alert box for now
+		function exceptionHandler(e) {
+			alert("Exception: "+e.code+"::"+e.message);
+		}
+
+		// Generic function to dump streamEvents to the alert box
+		function dumpStreams(streams, reason) {
+			for (var i=0; i<streams.length; i++) {
+				alert("streamID: "+streams[i].streamId + "\n" +
+					"connectionId: "+streams[i].connection.connectionId +" \n" +
+					"type: "+streams[i].type +"\n" +
+					"name: "+streams[i].name +"\n" +
+					"reason: "+reason);
+			}
+		}
+
+		// Generic function to dump connectionEvents to the alert box
+		function dumpConnections(connections, reason) {
+			for (var i=0; i<connections.length; i++) {
+				alert("connectionId: "+connections[i].connectionId +" \n" +
+					"reason: "+reason);
+			}
+		}
+
+                // Action functions
+
+		// Called when user wants to start participating in the call
+		function startPublishing() {
+			// Starts publishing user local camera and mic 
+			// as a stream into the session
+
+			var parentDiv = document.getElementById("myCamera");
+			var stubDiv = document.createElement("div");
+			stubDiv.id = "tbx_publisher";
+			parentDiv.appendChild(stubDiv);
+
+			// TBD: failed silently when div ID didn't exist
+                        thePublisher = theSession.publish(stubDiv.id, {width: 160, height: 120});
+
+			document.getElementById("action").innerHTML = "&nbsp;";
+		}
+
+		// Called when user wants to stop participating in the call
+		function stopPublishing() {
+			if (thePublisher != null) {
+				// Stop the stream
+				theSession.unpublish(thePublisher);
+				thePublisher = null;
+			}
+
+			document.getElementById("action").innerHTML = "&nbsp;";
+		}
+
+		// Called to subscribe to a new stream
+                function subscribeToStream(session, stream) {
+                        // Create a div for the subscribe widget to replace
+
+                        var parentDiv = document.getElementById("streams");
+                        var stubDiv = document.createElement("div");
+                        stubDiv.id = "tbx_subscriber_" + stream.streamId;
+                        parentDiv.appendChild(stubDiv);
+
+                        session.subscribe(stream, stubDiv.id, {width: 300, height: 225});
+                }
+
+		// Called to unsubscribe from an existing stream
+		function unsubscribeFromStream(session, stream) {
+			var subscribers = session.getSubscribersForStream(stream);
+
+			for (var i=0; i<subscribers.length; i++)
+				session.unsubscribe(subscribers[i]);
+		}
+
+
+                // Handler functions
+
+		function sessionConnectedHandler(e) {
+			if (debug) {
+				alert("sessionConnectedHandler");
+				dumpConnections(e.connections, "");
+				dumpStreams(e.streams, "");
+			}
+
+			// Now possible to join a call
+
+			document.getElementById("action").innerHTML = '<a href="javascript:startPublishing()"</a>';
+
+			// Display streams on screen
+			for (var i=0; i<e.streams.length; i++)
+				subscribeToStream(e.target, e.streams[i]);
+		}
+
+		function streamCreatedHandler(e) {
+			if (debug) {
+				alert("streamCreatedHandler");
+				dumpStreams(e.streams, "");
+			}
+
+			// Display streams on screen.  Note that
+			// we will get a streamCreated event for ourselves
+			// when we successfully start publishing
+
+			for (var i=0; i<e.streams.length; i++) {
+				if (e.streams[i].connection.connectionId != e.target.connection.connectionId)
+					subscribeToStream(e.target, e.streams[i]);
+				else
+					document.getElementById("action").innerHTML = '<a href="javAscript:stopPublishing()">Just Watch</a>';
+			}
+		}
+
+		function streamDestroyedHandler(e) {
+			if (debug) {
+				alert("streamDestroyedHandler");
+				dumpStreams(e.streams, e.reason);
+			}
+
+			// Remove streams from screen.  Note that
+			// we will get a streamDestroyed event for ourselves
+			// when we successfully stop publishing
+
+			for (var i=0; i<e.streams.length; i++) {
+				if (e.streams[i].connection.connectionId != e.target.connection.connectionId)
+					unsubscribeFromStream(e.target, e.streams[i]);
+				else
+					document.getElementById("action").innerHTML = '<a href="javascript:startPublishing()"></a>';
+			}
+		}
+
+	</script>
+</head>
+<body>
+
+	 <div id="main">
+                <div id="streams"></div>
+                <div id="myCamera" class="publisherContainer"></div>
+		<div id="action"><a href="javascript:startPublishing()"></a></div>
+	</div->
+
+        <script type="text/javascript">
+                // Set debugging level if you want; displays to a div with id="tokbox_console"
+                // TB.setLogLevel(TB.DEBUG);
+
+                if (theSessionId == "") {
+                        alert("Please contact TokBox Business Development to enable this demo.  Thanks!");
+                } else {
+			// Create the local session object
+			theSession = TB.initSession(theSessionId);
+
+			// Register all the callbacks that route events to
+			// Javascript functions
+
+			theSession.addEventListener("sessionConnected", sessionConnectedHandler);
+			theSession.addEventListener("streamCreated", streamCreatedHandler);
+			theSession.addEventListener("streamDestroyed", streamDestroyedHandler);
+			TB.addEventListener("exception", exceptionHandler);
+
+			// Connect to the session
+
+			theSession.connect(thePartnerKey, "devtoken");
+                }
+        </script>
+
+</body>
+</html>
