@@ -273,7 +273,7 @@
 <script src="http://platform.twitter.com/widgets.js" type="text/javascript"></script>
 <div><a href="http://twitter.com/share" class="twitter-share-button"
   data-count="none" data-text="Cash Cab Shout Out! What's the Answer?">Tweet</a></div>
-<form action="call-request.php" method="post">
+<form action="call-request.php">
   <p> <input type="text" name="TO" placeholder="Type Number Here"><input type="submit" value="Call your friend"></p>
 </form>
   
