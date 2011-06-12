@@ -100,7 +100,9 @@
 	}
 	</style>
 
-        <script type="text/javascript" src="http://staging.tokbox.com/v0.90/js/TB.min.js"></script>
+  <script type="text/javascript" src="http://staging.tokbox.com/v0.90/js/TB.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+	<script type="text/javascript" src="trivia.js"></script>
 	
 	<script type="text/javascript">
                 var thePartnerKey = 1127;  // TBD: tokbox internal key
@@ -264,6 +266,23 @@
 		CASH CAB!<img src="powered-by-tokbox.png" style="padding-bottom:4px; vertical-align: middle;"/>&nbsp 		</p>
 </div>
        <div class="controls">
+					<button id="getQuestion">Next Question</button>
+					<button id="getAnswer">Answer</button>
+					<div id="question"></div>
+					<div id="answer"></div>
+					
+					<script type="text/javascript">
+					
+						$("#getQuestion").bind('click', function() {
+							$("#question").html(getNextQuestion());
+							$("#answer").html("");
+						});
+						
+						$("#getAnswer").bind('click', function() {
+							$("#answer").html(getAnswer());
+						});
+					
+					</script>
        </div>
 	<div class="driver">
 	   <h2>THE DRIVER SEAT</h2>
